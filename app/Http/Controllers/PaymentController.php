@@ -26,7 +26,9 @@ class PaymentController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request) {}
+    public function store(Request $request) {
+        dd('hello to try the push');
+    }
 
     /**
      * Display the specified resource.
