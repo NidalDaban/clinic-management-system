@@ -20,7 +20,8 @@ class Appointment extends Model
         'attends',
         'addintional_note',
         'status',
-        'payment_id'
+        'payment_id',
+        'service_id',
     ];
 
     public function patient()
@@ -46,5 +47,9 @@ class Appointment extends Model
     public function payment()
     {
         return $this->belongsTo(Payment::class);
+    }
+
+    public function service () {
+        return $this->belongsTo(Service::class);
     }
 }

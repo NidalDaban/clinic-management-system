@@ -6,7 +6,7 @@
 @section('subtitle', 'Place your appointment with your favorite doctor')
 
 <!-- Appointment Section -->
-<section id="appointment" class="appointment section py-5 bg-light">
+<section id="appointment" class="appointment section py-5 bg-light"> 
     <div class="container section-title text-center mb-5" data-aos="fade-up">
         <h2>Appointment</h2>
         <p>To book an appointment, fill out the form below. This helps our team prepare and give you the best care
@@ -30,7 +30,7 @@
                 <div class="col-md-6">
                     <label for="date" class="form-label">Appointment Date & Time</label>
                     <input type="datetime-local" name="appointment_datetime"
-                        class="form-control @error('date') is-invalid @enderror" id="date" required
+                        class="form-control @error('appointment_datetime') is-invalid @enderror" id="date" required
                         min="{{ \Carbon\Carbon::create(2025, 4, 20, 9, 0)->format('Y-m-d\TH:i') }}">
                     @error('appointment_datetime')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -51,6 +51,23 @@
                     @enderror
                 </div>
 
+                <!-- Select Service -->
+                <div class="col-md-6">
+                    <label for="service_id" class="form-label">Select Service</label>
+                    <select name="service_id" id="service_id"
+                        class="form-select @error('service_id') is-invalid @enderror" required>
+                        <option value="" disabled selected>Select a Service</option>
+                        @foreach ($services as $service)
+                            <option value="{{ $service->id }}" data-price="{{ $service->price }}">
+                                {{ ucfirst($service->name) }} - {{ number_format($service->price, 2) }} JD
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('service_id')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
                 <!-- Optional Message -->
                 <div class="col-12">
                     <label for="message" class="form-label">Message (Optional)</label>
@@ -59,17 +76,19 @@
                 </div>
             </div>
 
+            <!-- Payment Details -->
             <div class="row mt-4">
                 <h5>Payment Details</h5>
 
                 <div class="col-md-6">
                     <label for="total_amount" class="form-label">Total Amount</label>
-                    <input type="number" name="total_amount" class="form-control" step="0.01" required>
+                    <input type="number" name="total_amount" id="total_amount" class="form-control" step="0.01"
+                        required readonly>
                 </div>
 
                 <div class="col-md-6">
                     <label for="method" class="form-label">Payment Method</label>
-                    <select name="method" class="form-select" required>
+                    <select name="method" id="method" class="form-select" required>
                         <option disabled selected>Select Payment Method</option>
                         <option value="e-wallet">E-Wallet</option>
                         <option value="cash">Cash</option>
@@ -80,10 +99,11 @@
 
                 <div class="col-12 mt-3">
                     <label for="payment_note" class="form-label">Payment Note (Optional)</label>
-                    <textarea name="payment_note" class="form-control" rows="3"></textarea>
+                    <textarea name="payment_note" class="form-control" rows="3" id="payment_note"></textarea>
                 </div>
             </div>
 
+            <!-- Submit Button -->
             <div class="text-center mt-4">
                 @auth
                     <button type="submit" class="btn btn-primary px-4 py-2 rounded-pill">
@@ -96,54 +116,11 @@
                         onclick="showRegisterAlert(event)">
                         Make an Appointment
                     </a>
-
-                    <script>
-                        function showRegisterAlert(event) {
-                            event.preventDefault();
-                            Swal.fire({
-                                title: 'Register Required',
-                                text: 'You need to register before making an appointment.',
-                                icon: 'info',
-                                showCancelButton: true,
-                                confirmButtonText: 'Register Now',
-                                cancelButtonText: 'Cancel',
-                                confirmButtonColor: '#3085d6',
-                                cancelButtonColor: '#d33'
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    window.location.href = event.target.href;
-                                }
-                            });
-                        }
-                    </script>
                 @endguest
 
-                 <div id="formMessage" class="mt-3"></div>
+                <div id="formMessage" class="mt-3"></div>
             </div>
         </form>
     </div>
 </section>
-{{-- 
-@push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        @if (session('success'))
-            Swal.fire({
-                title: 'Success!',
-                text: '{{ session('success') }}',
-                icon: 'success',
-                confirmButtonColor: '#3085d6'
-            });
-        @endif
-
-        @if (session('error'))
-            Swal.fire({
-                title: 'Error!',
-                text: '{{ session('error') }}',
-                icon: 'error',
-                confirmButtonColor: '#d33'
-            });
-        @endif
-    </script>
-@endpush --}}
 @endsection
