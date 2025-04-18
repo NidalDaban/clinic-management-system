@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Appointment;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ThemeController extends Controller
 {
@@ -13,16 +15,14 @@ class ThemeController extends Controller
         return view('theme.index');
     }
 
-    // public function doctors () {
-    //     return view('theme.doctors');
-    // }
-
-    public function doctors() {
+    public function doctors()
+    {
         $doctors = User::where('role', 'doctor')->with('doctorReviews')->get();
         return view('theme.doctors', compact('doctors'));
     }
 
-    public function psychologists() {
+    public function psychologists()
+    {
         $psychologists = User::where('role', 'psychologist')->with('psychologistReviews')->get();
         return view('theme.psychologists', compact('psychologists'));
     }
@@ -52,9 +52,43 @@ class ThemeController extends Controller
         return view('theme.Profile.masterProfile');
     }
 
+    public function fetchAppointments(Request $request)
+    {
+        $user = Auth::user();
+        $type = $request->type;
+
+        $query = Appointment::with(['doctor', 'psychologist', 'service'])
+            ->where('patient_id', $user->id);
+
+        if ($type === 'upcoming') {
+            $query->whereIn('status', ['pending', 'confirmed']);
+        } else {
+            $query->whereIn('status', ['completed', 'cancelled']);
+        }
+
+        $appointments = $query
+            ->orderBy('appointment_datetime', 'desc')
+            ->paginate(5);
+
+        return view('theme.Profile.profilePartials.appointmentTable', compact('appointments'))->render();
+    }
+
     public function appointment()
     {
         return view('theme.partials.makeAppointment');
     }
 
+    public function liveSession()
+    {
+        $user = Auth::user();
+
+        $upcomingAppointment = Appointment::with('doctor')
+            ->where('patient_id', $user->id)
+            ->whereIn('status', ['confirmed', 'pending'])
+            ->where('appointment_datetime', '>=', now()->subMinutes(10))
+            ->orderBy('appointment_datetime')
+            ->first();
+
+        return view('theme.liveSessions', compact('upcomingAppointment'));
+    }
 }

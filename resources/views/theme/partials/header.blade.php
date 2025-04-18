@@ -26,7 +26,7 @@
                             </li>
                         </ul>
                     </li>
-
+                    <li><a href="{{ route('theme.live-sessions') }}" class="@yield('live-sessions-active')">Live Sessions</a></li>
                     <li><a href="{{ route('theme.contact') }}" class=@yield('contact-active')>Contact</a></li>
                     @if (!Auth::check())
                         <li><a href="{{ route('register') }}" class=@yield('register-active')>Registration / Login</a></li>

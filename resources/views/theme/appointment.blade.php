@@ -6,7 +6,7 @@
 @section('subtitle', 'Place your appointment with your favorite doctor')
 
 <!-- Appointment Section -->
-<section id="appointment" class="appointment section py-5 bg-light"> 
+<section id="appointment" class="appointment section py-5 bg-light">
     <div class="container section-title text-center mb-5" data-aos="fade-up">
         <h2>Appointment</h2>
         <p>To book an appointment, fill out the form below. This helps our team prepare and give you the best care

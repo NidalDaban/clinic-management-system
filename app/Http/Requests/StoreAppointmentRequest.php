@@ -40,7 +40,7 @@ class StoreAppointmentRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             $recipient = User::find($this->recipient_id);
-            $datetime = \Carbon\Carbon::parse($this->appointment_datetime)->format('Y-m-d H:i'); // normalize to minute
+            $datetime = \Carbon\Carbon::parse($this->appointment_datetime)->format('Y-m-d H:i');
 
             if (!$recipient || !in_array($recipient->role, ['doctor', 'psychologist'])) {
                 $validator->errors()->add('recipient_id', 'You can only book appointments with doctors or psychologists.');
@@ -58,6 +58,16 @@ class StoreAppointmentRequest extends FormRequest
 
             if ($query->exists()) {
                 $validator->errors()->add('appointment_datetime', 'This time slot is already booked for this recipient.');
+            }
+
+            if ($this->attends === 'online') {
+                $method = strtolower(trim($this->get('method')));
+
+                if (empty($method)) {
+                    $validator->errors()->add('method', 'Payment method is required for online appointments.');
+                } elseif ($method === 'cash') {
+                    $validator->errors()->add('method', 'Cash payment is not allowed for online appointments.');
+                }
             }
         });
     }

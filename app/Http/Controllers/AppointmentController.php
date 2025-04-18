@@ -20,6 +20,28 @@ class AppointmentController extends Controller
         return view('appointment.show', compact('appointment'));
     }
 
+    public function profile()
+    {
+        $user = Auth::user();
+
+        // Upcoming Appointments: status = pending or confirmed
+        $upcomingAppointments = Appointment::with(['doctor', 'psychologist', 'service'])
+            ->where('patient_id', $user->id)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->orderBy('appointment_datetime', 'desc')
+            ->paginate(5, ['*'], 'upcoming_page'); // Important to use unique page name
+
+        // Past Appointments: status = completed or cancelled
+        $pastAppointments = Appointment::with(['doctor', 'psychologist', 'service'])
+            ->where('patient_id', $user->id)
+            ->whereIn('status', ['completed', 'cancelled'])
+            ->orderBy('appointment_datetime', 'desc')
+            ->paginate(5, ['*'], 'past_page'); // Also unique
+
+        return view('theme.Profile.masterProfile', compact('upcomingAppointments', 'pastAppointments'));
+    }
+
+
     public function create($doctor_id)
     {
         $recipient = User::findOrFail($doctor_id);
@@ -33,10 +55,14 @@ class AppointmentController extends Controller
         } elseif ($recipient->role === 'psychologist') {
             $services = Service::where('type', 'therapy')->get();
         } else {
-            return redirect()->back()->with('Invalid recipient role.');
+            return redirect()->back()->with('error', 'Invalid recipient role.');
         }
 
-        return view('theme.appointment', compact('recipient', 'services'));
+        return view('theme.appointment', [
+            'recipient' => $recipient,
+            'services' => $services,
+            'doctor' => $recipient,
+        ]);
     }
 
     public function store(StoreAppointmentRequest $request)
@@ -45,7 +71,6 @@ class AppointmentController extends Controller
             $validated = $request->validated();
             $recipient = User::findOrFail($validated['recipient_id']);
 
-            // Handle optional payment creation
             $paymentId = null;
             if ($validated['attends'] === 'online' && isset($validated['total_amount'])) {
                 $payment = Payment::create([
@@ -56,7 +81,6 @@ class AppointmentController extends Controller
                 $paymentId = $payment->id;
             }
 
-            // Set common appointment data
             $data = [
                 'patient_id' => Auth::id(),
                 'appointment_datetime' => $validated['appointment_datetime'],
@@ -69,7 +93,6 @@ class AppointmentController extends Controller
                 'status' => 'pending',
             ];
 
-            // Assign doctor or psychologist based on role
             if ($recipient->role === 'doctor') {
                 $data['doctor_id'] = $recipient->id;
             } elseif ($recipient->role === 'psychologist') {
@@ -85,42 +108,4 @@ class AppointmentController extends Controller
             return redirect()->back()->with('error', 'Failed to book the appointment. Please try again.');
         }
     }
-
-
-    // public function store(Request $request)
-    // {
-    //     try {
-    //         $validated = $request->validate([
-    //             'recipient_id' => 'required|exists:users,id',
-    //             'appointment_datetime' => 'required|date|after:now',
-    //             'attends' => 'required|in:online,clinic',
-    //             'addintional_note' => 'nullable|string|max:1000',
-    //         ]);
-
-    //         $recipient = User::findOrFail($validated['recipient_id']);
-
-    //         $data = [
-    //             'patient_id' => Auth::id(),
-    //             'appointment_datetime' => $validated['appointment_datetime'],
-    //             'attends' => $validated['attends'],
-    //             'addintional_note' => $validated['addintional_note'],
-    //             'doctor_id' => null,
-    //             'psychologist_id' => null,
-    //         ];
-
-    //         if ($recipient->role === 'doctor') {
-    //             $data['doctor_id'] = $recipient->id;
-    //         } elseif ($recipient->role === 'psychologist') {
-    //             $data['psychologist_id'] = $recipient->id;
-    //         } else {
-    //             return redirect()->back()->with('error', 'Only doctors or psychologists can be booked.');
-    //         }
-
-    //         Appointment::create($data);
-
-    //         return redirect()->back()->with('success', 'Appointment booked successfully!');
-    //     } catch (\Exception $e) {
-    //         return redirect()->back()->with('error', 'Failed to book the appointment. Please try again.');
-    //     }
-    // }
 }

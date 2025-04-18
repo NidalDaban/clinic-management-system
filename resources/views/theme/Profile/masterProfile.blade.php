@@ -32,14 +32,15 @@
                         @include('theme.Profile.profilePartials.header')
 
                         <div class="tab-content">
+
                             <!-- General Info Tab -->
-                            <div class="tab-pane fade active show" id="account-general">
+                            <div class="tab-pane fade show active" id="account-general">
                                 <hr class="border-light m-0">
                                 <div class="card-body">
 
                                     <div class="form-group">
                                         <label class="form-label">Full Name: </label>
-                                        <span style="color: blue">
+                                        <span class="text-primary">
                                             {{ Auth::user()->first_name . ' ' . Auth::user()->second_name . ' ' . Auth::user()->middle_name . ' ' . Auth::user()->last_name }}
                                         </span>
                                     </div>
@@ -96,12 +97,27 @@
                             <!-- Appointments Tab -->
                             <div class="tab-pane fade" id="account-appointments">
                                 <div class="card-body">
-                                    <h5>Upcoming Appointments:</h5>
-                                    <ul>
-                                        <li>Psychiatrist - Dr. Sarah (2025-04-15 at 2:00 PM)</li>
-                                        <li>Therapist - Dr. John (2025-04-20 at 10:00 AM)</li>
+                                    <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" id="upcoming-tab" data-toggle="tab"
+                                                href="#upcoming" role="tab">Upcoming</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="past-tab" data-toggle="tab" href="#past"
+                                                role="tab">Past</a>
+                                        </li>
                                     </ul>
-                                    <button type="button" class="btn btn-primary">Book New Appointment</button>
+
+                                    <div class="tab-content mt-3" id="appointmentTabsContent">
+                                        <div class="tab-pane fade show active" id="upcoming" role="tabpanel">
+                                            <div id="upcomingAppointmentsContainer"
+                                                class="table-responsive text-nowrap">Loading...</div>
+                                        </div>
+                                        <div class="tab-pane fade" id="past" role="tabpanel">
+                                            <div id="pastAppointmentsContainer" class="table-responsive text-nowrap">
+                                                Loading...</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -134,6 +150,7 @@
                                     <button type="button" class="btn btn-primary">Save Password</button>
                                 </div>
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -141,7 +158,7 @@
 
             <div class="text-right mt-3">
                 <button type="submit" class="btn btn-primary">Save Changes</button>
-                <button type="reset" class="btn btn-default">Cancel</button>
+                <button type="reset" class="btn btn-secondary">Cancel</button>
             </div>
         </form>
     </div>
@@ -174,6 +191,56 @@
             });
         @endif
     </script>
+
+    <!-- Appointment AJAX Loading -->
+    <script>
+        const fetchAppointmentsUrl = "{{ route('theme.user-profile.appointments') }}";
+
+        function loadAppointments(type, page = 1) {
+            $.ajax({
+                url: fetchAppointmentsUrl,
+                method: 'GET',
+                data: {
+                    type: type,
+                    page: page
+                },
+                beforeSend: function() {
+                    const containerId = type === 'upcoming' ? '#upcomingAppointmentsContainer' :
+                        '#pastAppointmentsContainer';
+                    $(containerId).html('<div class="text-center p-3">Loading...</div>');
+                },
+                success: function(data) {
+                    const containerId = type === 'upcoming' ? '#upcomingAppointmentsContainer' :
+                        '#pastAppointmentsContainer';
+                    $(containerId).html(data);
+                    console.log(`Loaded ${type} appointments (page ${page})`);
+                },
+                error: function(xhr, status, error) {
+                    console.error(`Failed to load ${type} appointments:`, error);
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            loadAppointments('upcoming');
+            loadAppointments('past');
+
+            $(document).on('click', '.pagination a', function(e) {
+                e.preventDefault();
+                const page = $(this).attr('href').split('page=')[1];
+                const containerId = $(this).closest('.tab-pane').attr('id');
+                const type = containerId.includes('upcoming') ? 'upcoming' : 'past';
+                loadAppointments(type, page);
+            });
+
+            $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+                const target = $(e.target).attr("href");
+                const type = target.includes('upcoming') ? 'upcoming' : 'past';
+                loadAppointments(type);
+            });
+        });
+    </script>
+
 
 </body>
 

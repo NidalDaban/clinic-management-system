@@ -129,3 +129,37 @@
         });
     </script>
 @endif
+
+@if ($errors->has('method'))
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Invalid Payment Method',
+            html: `<p style="font-size:16px;">Cash payments are not allowed for online appointments.</p>
+                   <p style="font-size:14px;">Please choose another method like Visa, MasterCard, or E-Wallet.</p>`,
+            confirmButtonText: 'Understood',
+            customClass: {
+                popup: 'shadow-lg rounded-4',
+                confirmButton: 'btn btn-primary px-4 py-2 rounded-pill'
+            },
+            buttonsStyling: false
+        });
+    </script>
+@endif
+@if ($errors->any() && request()->is('register'))
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            Swal.fire({
+                title: 'Registration Failed',
+                html: `{!! implode('<br>', $errors->all()) !!}`,
+                icon: 'error',
+                confirmButtonColor: '#d33',
+                customClass: {
+                    popup: 'shadow-lg rounded-4',
+                    confirmButton: 'btn btn-danger px-4 py-2 rounded-pill'
+                },
+                buttonsStyling: false
+            });
+        });
+    </script>
+@endif

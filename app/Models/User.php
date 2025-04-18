@@ -137,15 +137,23 @@ class User extends Authenticatable
         return $this->psychologistReviews()->latest()->first();
     }
 
-    public function doctor () {
+    public function doctor()
+    {
         return $this->hasMany(Appointment::class, 'doctor_id');
     }
 
-    public function patient () {
+    public function patient()
+    {
         return $this->hasMany(Appointment::class, 'patient_id');
     }
 
-    public function secretary () {
+    public function secretary()
+    {
         return $this->hasMany(Appointment::class, 'secretary_id');
+    }
+
+    public function getFullNameAttribute()
+    {
+        return "{$this->first_name} {$this->second_name} {$this->middle_name} {$this->last_name}";
     }
 }
