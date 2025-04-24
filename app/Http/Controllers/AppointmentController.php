@@ -8,12 +8,17 @@ use App\Models\Appointment;
 use App\Models\Payment;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\ZoomService;
+use Carbon\Carbon;
 use Dotenv\Exception\ValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+
 class AppointmentController extends Controller
 {
+    public function index() {}
+
     public function show($id)
     {
         $appointment = Appointment::with(['patient', 'doctor', 'psychologist', 'secretary'])->findOrFail($id);
@@ -24,19 +29,17 @@ class AppointmentController extends Controller
     {
         $user = Auth::user();
 
-        // Upcoming Appointments: status = pending or confirmed
         $upcomingAppointments = Appointment::with(['doctor', 'psychologist', 'service'])
             ->where('patient_id', $user->id)
             ->whereIn('status', ['pending', 'confirmed'])
             ->orderBy('appointment_datetime', 'desc')
-            ->paginate(5, ['*'], 'upcoming_page'); // Important to use unique page name
+            ->paginate(5, ['*'], 'upcoming_page');
 
-        // Past Appointments: status = completed or cancelled
         $pastAppointments = Appointment::with(['doctor', 'psychologist', 'service'])
             ->where('patient_id', $user->id)
             ->whereIn('status', ['completed', 'cancelled'])
             ->orderBy('appointment_datetime', 'desc')
-            ->paginate(5, ['*'], 'past_page'); // Also unique
+            ->paginate(5, ['*'], 'past_page');
 
         return view('theme.Profile.masterProfile', compact('upcomingAppointments', 'pastAppointments'));
     }
@@ -65,11 +68,21 @@ class AppointmentController extends Controller
         ]);
     }
 
-    public function store(StoreAppointmentRequest $request)
+    public function store(StoreAppointmentRequest $request, ZoomService $zoom)
     {
         try {
             $validated = $request->validated();
             $recipient = User::findOrFail($validated['recipient_id']);
+            $patientId = Auth::id();
+
+            $existingAppointment = Appointment::where('patient_id', $patientId)
+                ->whereIn('status', ['pending', 'confirmed'])
+                ->first();
+
+            if ($existingAppointment) {
+                return redirect()->back()
+                    ->with('error', 'You already have an active appointment ' . $existingAppointment->status . '(with Dr. ' . $recipient->first_name . ' ' . $recipient->last_name . '). Please complete or cancel it before booking a new one.');
+            }
 
             $paymentId = null;
             if ($validated['attends'] === 'online' && isset($validated['total_amount'])) {
@@ -101,7 +114,32 @@ class AppointmentController extends Controller
                 return redirect()->back()->with('error', 'You can only book appointments with doctors or psychologists.');
             }
 
-            Appointment::create($data);
+            $appointment = Appointment::create($data);
+
+            // Create Zoom meeting if it's an online appointment
+            if ($appointment->attends === 'online') {
+                $meeting = $zoom->createMeeting(
+                    'RafiqCare Therapy Session',
+                    Carbon::parse($appointment->appointment_datetime)->toIso8601String(),
+                    60
+                );
+
+                logger()->info('Created Zoom Meeting:', ['meeting' => $meeting]);
+
+                if ($meeting && isset($meeting['join_url'])) {
+                    $appointment->zoom_meeting_url = $meeting['join_url'];
+                    $appointment->save();
+                }
+
+                if (!$meeting || !isset($meeting['join_url'])) {
+                    return redirect()->back()->with('error', 'Zoom meeting could not be created.');
+                }
+
+                $appointment->update([
+                    'zoom_join_url' => $meeting['join_url'],
+                    'zoom_start_url' => $meeting['start_url'],
+                ]);
+            }
 
             return redirect()->back()->with('success', 'Appointment booked successfully!');
         } catch (\Exception $e) {

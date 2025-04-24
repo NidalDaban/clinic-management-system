@@ -15,13 +15,24 @@
             <div class="card shadow">
                 <div class="card-body">
                     <h5 class="card-title">Upcoming Appointment</h5>
+                    <p><strong>Auth Id:</strong> {{ auth()->user()->id ?? 'N/A' }}</p>
                     <p><strong>P Id:</strong> {{ $upcomingAppointment->id ?? 'N/A' }}</p>
                     <p><strong>P Name:</strong> {{ $upcomingAppointment->patient->full_name ?? 'N/A' }}</p>
                     <p><strong>Date:</strong> {{ $appointmentDateTime->format('l, F j, Y') }}</p>
                     <p><strong>Time:</strong> {{ $appointmentDateTime->format('h:i A') }}</p>
                     <p><strong>Doctor:</strong> {{ $upcomingAppointment->doctor->full_name ?? 'N/A' }}</p>
 
-                    @if (now()->between($appointmentDateTime->copy()->subMinutes(10), $appointmentDateTime->copy()->addMinutes(60)))
+                    <p>Now: {{ now() }}</p>
+                    <p>Start window: {{ \Carbon\Carbon::parse($upcomingAppointment->appointment_datetime)->subMinutes(10) }}
+                    </p>
+                    <p>End window: {{ \Carbon\Carbon::parse($upcomingAppointment->appointment_datetime)->addMinutes(60) }}
+                    </p>
+
+                    @if (
+                        $upcomingAppointment &&
+                            now()->between(
+                                \Carbon\Carbon::parse($upcomingAppointment->appointment_datetime)->subMinutes(10),
+                                \Carbon\Carbon::parse($upcomingAppointment->appointment_datetime)->addMinutes(60)))
                         <a href="{{ $upcomingAppointment->zoom_meeting_url }}" target="_blank" class="btn btn-success">
                             Join Live Session
                         </a>

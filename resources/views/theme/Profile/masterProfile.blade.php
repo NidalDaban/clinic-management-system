@@ -19,7 +19,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('user-profile.update') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('theme.user-profile') }}" enctype="multipart/form-data">
             @csrf
             @method('PATCH')
 

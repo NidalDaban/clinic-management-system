@@ -22,6 +22,7 @@ class Appointment extends Model
         'status',
         'payment_id',
         'service_id',
+        'zoom_meeting_url',
     ];
 
     public function patient()
@@ -49,7 +50,8 @@ class Appointment extends Model
         return $this->belongsTo(Payment::class);
     }
 
-    public function service () {
+    public function service()
+    {
         return $this->belongsTo(Service::class);
     }
 }

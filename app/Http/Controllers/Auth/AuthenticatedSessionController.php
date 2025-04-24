@@ -29,6 +29,10 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        if (Auth::user()->role === 'doctor') {
+            return to_route('doctor.dashboard');
+        }
+
         return to_route('theme.index');
     }
 
@@ -43,6 +47,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return to_route('theme.index');
+        // return to_route('logout');
+        return redirect()->route('theme.index');
     }
 }

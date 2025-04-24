@@ -13,6 +13,11 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    const ROLE_USER = 'user';
+    const ROLE_PATIENT_DOCTOR = 'patientDoctor';
+    const ROLE_PATIENT_PSYCHOLOGIST = 'patientPsychologist';
+    const ROLE_DOCTOR = 'doctor';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -155,5 +160,16 @@ class User extends Authenticatable
     public function getFullNameAttribute()
     {
         return "{$this->first_name} {$this->second_name} {$this->middle_name} {$this->last_name}";
+    }
+
+    public function country()
+    {
+        return $this->belongsTo(countries::class);
+    }
+
+    public function dailySchedules()
+    {
+        return $this->hasMany(DailySchedule::class, 'doctor_id')
+            ->orWhere('psychologist_id', $this->id);
     }
 }

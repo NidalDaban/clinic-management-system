@@ -80,6 +80,10 @@ class ThemeController extends Controller
 
     public function liveSession()
     {
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'You must be logged in to access live sessions.');
+        }
+
         $user = Auth::user();
 
         $upcomingAppointment = Appointment::with('doctor')
@@ -91,4 +95,5 @@ class ThemeController extends Controller
 
         return view('theme.liveSessions', compact('upcomingAppointment'));
     }
+
 }
